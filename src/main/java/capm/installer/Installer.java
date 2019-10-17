@@ -11,7 +11,7 @@ import capm.installer.MODEL.ShellSSH;
 import capm.installer.TOOL.Utilities;
 
 public class Installer{
-	private String groovyFileName = "dr.groovy";
+
 	protected Monitoring monitor = new ConsoleMonitor();
 	protected ShellSSH shell;
 
@@ -31,24 +31,13 @@ public class Installer{
 		this.monitor = monitor;
 	}
 
-	public Installer(ShellSSH shell, String groovyFile) {
+	public Installer(ShellSSH shell) {
 		this.shell = shell;
-		this.groovyFileName = groovyFile;
 	}
-
-	public void install() throws CompilationFailedException, URISyntaxException, IOException, ShellCommandException {
+	
+	public void run(String function, String groovyfile) throws CompilationFailedException, URISyntaxException, IOException, ShellCommandException {
 		try {
-			Utilities.excuteGroovyFromResources("install", groovyFileName);
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void uninstall() throws IOException, ShellCommandException, CompilationFailedException, URISyntaxException {
-		try {
-			Utilities.excuteGroovyFromResources("uninstall", groovyFileName);
+			Utilities.excuteGroovyFromResources(function, groovyfile);
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {

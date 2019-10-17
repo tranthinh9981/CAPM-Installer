@@ -1,11 +1,9 @@
 import capm.installer.TOOL.Utilities;
-import groovy.transform.InheritConstructors
 import capm.installer.Installer
 import capm.installer.INTERFACE.Monitoring
 import capm.installer.SHARE.SharedResources
 import capm.installer.MODEL.ShellSSH
 
-@InheritConstructors
 class Shell {
 	PrintStream sender;
 	BufferedReader receiver;
@@ -29,6 +27,14 @@ class Shell {
 				break;
 		}
 	}
+	def boolean excuteScript(String script, TreeMap<String, String> configCommand) {
+		String[] lines = script.split("\\n");
+		for (String line : lines) {
+			if(excute(line, configCommand) > 0)
+				return false;
+		}
+		return true;
+	}
 	def int excute(String command, TreeMap<String, String> configCommand) {
 		if(currentIndex < SharedResources.getScriptCursor()) {
 			currentIndex++;
@@ -47,6 +53,7 @@ class Shell {
 					String key = entry.getKey();
 					String value = entry.getValue();
 					if(response.indexOf(key)> -1) {
+						System.out.println("\t(key:$key\n\tvalue:$value)\n");
 						sender.print(value+"\r");
 						sender.flush();
 						break;

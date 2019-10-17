@@ -1,10 +1,12 @@
 import capm.installer.TOOL.Utilities;
+import groovy.transform.InheritConstructors
 import capm.installer.Installer
 import capm.installer.INTERFACE.Monitoring
 import capm.installer.SHARE.SharedResources
 import capm.installer.MODEL.ShellSSH
 import Shell
 
+@InheritConstructors
 class Groovy extends Shell{
 	//your code below!
 	String binPath = SharedResources.getResource('*.bin path');
@@ -13,24 +15,24 @@ class Groovy extends Shell{
 	String daIP = SharedResources.getResource('data aggregator ip');
 	def String install() {
 		init();
-		if(!pm_installation())
+		if(!pc_installation())
 			return response;
 		return "";
 	}
 	def String uninstall() {
 		init();
-		if(!pm_uninstallation())
+		if(!pc_uninstallation())
 			return response;
 		return "";
 	}
 	
-	def boolean pm_installation(){
+	def boolean pc_installation(){
 		String script = "chmod a+x $binPath\n"+
 				"rm -rf $extractedPath\n"+
 				"$binPath\n";
 
 		TreeMap<String, String> configCommand = new TreeMap<String, String>();
-		configCommand.put('5- 繁體中文','1');
+		configCommand.put('Choose Locale','1');
 		configCommand.put("prompt and make changes",'');
 		configCommand.put("PRESS <ENTER> TO CONTINUE","");
 		configCommand.put("DO YOU ACCEPT THE TERMS OF THIS LICENSE AGREEMENT?","y");
@@ -45,14 +47,9 @@ class Groovy extends Shell{
 		configCommand.put('Disk Space Information','');
 		configCommand.put('Installation Complete','\necho $?');
 
-		String[] lines = script.split("\\n");
-		for (String line : lines) {
-			if(excute(line, configCommand) > 0)
-				return false;
-		}
-		return true;
+		return excuteScript(script, configCommand);
 	}
-	def boolean pm_uninstallation() {
+	def boolean pc_uninstallation() {
 		String script = "$extractedPath/PerformanceCenter/uninstall/Uninstall_PerformanceCenter\n";
 
 		TreeMap<String, String> configCommand = new TreeMap<String, String>();
@@ -60,11 +57,7 @@ class Groovy extends Shell{
 		configCommand.put('Some items could not be removed', 'echo $?');
 		configCommand.put('Uninstall Complete', 'echo $?');
 		configCommand.put('could not complete due to an error', 'echo $?');
-		String[] lines = script.split("\\r?\\n");
-		for (String line : lines) {
-			if(excute(line, configCommand) > 0)
-				return false;
-		}
-		return true;
+		
+		return excuteScript(script, configCommand);
 	}
 }

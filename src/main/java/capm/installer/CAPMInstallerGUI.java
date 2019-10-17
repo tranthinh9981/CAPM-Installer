@@ -6,8 +6,6 @@ import javax.swing.JFrame;
 import javax.swing.BoxLayout;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.ButtonGroup;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
@@ -15,16 +13,20 @@ import java.awt.GridLayout;
 import java.awt.FlowLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.SystemColor;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.ini4j.Wini;
 
 import com.jcraft.jsch.JSchException;
 
@@ -34,8 +36,11 @@ import capm.installer.MODEL.ShellSSH;
 import capm.installer.SHARE.SharedResources;
 
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.awt.event.ActionEvent;
 import javax.swing.JTextField;
 import java.awt.GridBagLayout;
@@ -49,19 +54,21 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.ListSelectionModel;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 
 public class CAPMInstallerGUI {
 
-	private JFrame frmCapmInstaller;
-	private final ButtonGroup buttonGroup = new ButtonGroup();
-	private final ButtonGroup buttonGroup_1 = new ButtonGroup();
-	private JTextField textFieldHost;
-	private JTextField textFieldID;
-	private JTextField textFieldPw;
-	private JTextPane textPane;
-	private JTabbedPane tabbedPane;
 	private boolean isConnecting = false;
 	private Thread thread;
+	private LinkedHashMap<String, String> resource_groovy = new LinkedHashMap<String, String>();
+	private LinkedHashMap<String, String> resource_function = new LinkedHashMap<String, String>();
+	private LinkedHashMap<String, JTable> resource_table = new LinkedHashMap<String, JTable>();
 
 	/**
 	 * Launch the application.
@@ -72,8 +79,8 @@ public class CAPMInstallerGUI {
 				try {
 					CAPMInstallerGUI window = new CAPMInstallerGUI();
 					UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-					SwingUtilities.updateComponentTreeUI(window.frmCapmInstaller);
-					window.frmCapmInstaller.setVisible(true);
+					SwingUtilities.updateComponentTreeUI(window.frmInstaller);
+					window.frmInstaller.setVisible(true);
 
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -93,23 +100,24 @@ public class CAPMInstallerGUI {
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frmCapmInstaller = new JFrame();
-		frmCapmInstaller.setTitle("CAPM Installer");
-		frmCapmInstaller.setBounds(100, 100, 450, 496);
-		frmCapmInstaller.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmCapmInstaller.getContentPane().setLayout(new BorderLayout(0, 0));
+
+		frmInstaller = new JFrame();
+		frmInstaller.setTitle("Remote Installer");
+		frmInstaller.setBounds(100, 100, 450, 523);
+		frmInstaller.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmInstaller.getContentPane().setLayout(new BorderLayout(0, 0));
 
 		JPanel panel = new JPanel();
-		frmCapmInstaller.getContentPane().add(panel, BorderLayout.NORTH);
+		frmInstaller.getContentPane().add(panel, BorderLayout.NORTH);
 		panel.setLayout(new GridLayout(1, 1, 0, 0));
 
 		JPanel panel_1 = new JPanel();
 		panel.add(panel_1);
 		GridBagLayout gbl_panel_1 = new GridBagLayout();
 		gbl_panel_1.columnWidths = new int[] { 434, 0 };
-		gbl_panel_1.rowHeights = new int[] { 33, 0, 33, 33, 33, 0 };
+		gbl_panel_1.rowHeights = new int[] { 33, 0, 33, 0 };
 		gbl_panel_1.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
-		gbl_panel_1.rowWeights = new double[] { 0.0, 1.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
+		gbl_panel_1.rowWeights = new double[] { 0.0, 1.0, 0.0, Double.MIN_VALUE };
 		panel_1.setLayout(gbl_panel_1);
 
 		JPanel panel_8 = new JPanel();
@@ -146,85 +154,50 @@ public class CAPMInstallerGUI {
 		panel_8.add(textFieldPw);
 		textFieldPw.setColumns(10);
 
-		JPanel panel_2 = new JPanel();
-		GridBagConstraints gbc_panel_2 = new GridBagConstraints();
-		gbc_panel_2.fill = GridBagConstraints.BOTH;
-		gbc_panel_2.insets = new Insets(0, 0, 5, 0);
-		gbc_panel_2.gridx = 0;
-		gbc_panel_2.gridy = 2;
-		panel_1.add(panel_2, gbc_panel_2);
-		panel_2.setLayout(null);
-
-		JLabel lblCh = new JLabel("Choose resource & action :");
-		lblCh.setBounds(10, 11, 144, 14);
-		panel_2.add(lblCh);
-
 		JPanel panel_3 = new JPanel();
 		FlowLayout flowLayout = (FlowLayout) panel_3.getLayout();
 		flowLayout.setAlignment(FlowLayout.LEFT);
 		GridBagConstraints gbc_panel_3 = new GridBagConstraints();
-		gbc_panel_3.fill = GridBagConstraints.BOTH;
-		gbc_panel_3.insets = new Insets(0, 0, 5, 0);
+		gbc_panel_3.fill = GridBagConstraints.HORIZONTAL;
 		gbc_panel_3.gridx = 0;
-		gbc_panel_3.gridy = 3;
+		gbc_panel_3.gridy = 2;
 		panel_1.add(panel_3, gbc_panel_3);
 
-		final JRadioButton radioButtonDR = new JRadioButton("Vertica DB");
-		radioButtonDR.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				tabbedPane.setSelectedIndex(0);
+		JLabel lblResources = new JLabel("Resource:");
+		panel_3.add(lblResources);
+		comboBoxRS = new JComboBox<String>();
+		comboBoxRS.setModel(new DefaultComboBoxModel<String>(
+				new String[] { "Vertica_DB", "Data_Aggregation", "Data_Collectors", "Performance_Center" }));
+		panel_3.add(comboBoxRS);
+		JLabel lblFunction = new JLabel("Function:");
+		panel_3.add(lblFunction);
+		comboBoxFunc = new JComboBox<String>();
+		comboBoxFunc.setModel(new DefaultComboBoxModel<String>(new String[] { "install", "uninstall" }));
+		panel_3.add(comboBoxFunc);
+		comboBoxRS.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent arg0) {
+				if (arg0.getStateChange() == ItemEvent.SELECTED) {
+					textFieldFile.setText(resource_groovy.get(arg0.getItem()));
+					String funcs[] = resource_function.get(arg0.getItem()).split(",");
+					comboBoxFunc.removeAllItems();
+					for (String funcName : funcs) {
+						comboBoxFunc.addItem(funcName);
+					}
+					tabbedPane.setSelectedIndex(comboBoxRS.getSelectedIndex());
+				}
 			}
 		});
-		buttonGroup.add(radioButtonDR);
-		radioButtonDR.setSelected(true);
-		panel_3.add(radioButtonDR);
 
-		final JRadioButton radioButtonDA = new JRadioButton("Data Aggregation");
-		radioButtonDA.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex(1);
-			}
-		});
-		buttonGroup.add(radioButtonDA);
-		panel_3.add(radioButtonDA);
+		JLabel lblFile = new JLabel("File:");
+		panel_3.add(lblFile);
 
-		final JRadioButton radioButtonDC = new JRadioButton("Data Collectors");
-		radioButtonDC.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex(2);
-			}
-		});
-		buttonGroup.add(radioButtonDC);
-		panel_3.add(radioButtonDC);
-
-		final JRadioButton radioButtonPM = new JRadioButton("Performance Center");
-		radioButtonPM.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				tabbedPane.setSelectedIndex(3);
-			}
-		});
-		buttonGroup.add(radioButtonPM);
-		panel_3.add(radioButtonPM);
-
-		JPanel panel_4 = new JPanel();
-		GridBagConstraints gbc_panel_4 = new GridBagConstraints();
-		gbc_panel_4.fill = GridBagConstraints.BOTH;
-		gbc_panel_4.gridx = 0;
-		gbc_panel_4.gridy = 4;
-		panel_1.add(panel_4, gbc_panel_4);
-		panel_4.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-
-		JRadioButton radioButtonInstall = new JRadioButton("Install");
-		radioButtonInstall.setSelected(true);
-		buttonGroup_1.add(radioButtonInstall);
-		panel_4.add(radioButtonInstall);
-
-		final JRadioButton radioButtonUninstall = new JRadioButton("Uninstall");
-		buttonGroup_1.add(radioButtonUninstall);
-		panel_4.add(radioButtonUninstall);
+		textFieldFile = new JTextField();
+		textFieldFile.setText("dr.groovy");
+		panel_3.add(textFieldFile);
+		textFieldFile.setColumns(10);
 
 		JPanel panel_5 = new JPanel();
-		frmCapmInstaller.getContentPane().add(panel_5, BorderLayout.CENTER);
+		frmInstaller.getContentPane().add(panel_5, BorderLayout.CENTER);
 		panel_5.setLayout(new BorderLayout(0, 0));
 
 		JPanel panel_6 = new JPanel();
@@ -254,10 +227,11 @@ public class CAPMInstallerGUI {
 		scrollPane.setColumnHeaderView(tabbedPane);
 
 		JPanel panel_9 = new JPanel();
-		tabbedPane.addTab("Vertica", null, panel_9, null);
+		tabbedPane.addTab("Vertica_DB", null, panel_9, null);
 		panel_9.setLayout(new BorderLayout(0, 0));
 
 		tableDR = new JTable();
+		panel_9.add(tableDR, BorderLayout.NORTH);
 		tableDR.setModel(new DefaultTableModel(
 				new Object[][] { { "*.bin path", "/root/installDR.bin" },
 						{ "extracted path", "/opt/CA/IMDataRepository_vertica9" }, { "database name", "polaris" },
@@ -268,10 +242,9 @@ public class CAPMInstallerGUI {
 		tableDR.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		tableDR.setFont(new Font("Times New Roman", Font.PLAIN, 13));
 		tableDR.setBackground(SystemColor.menu);
-		panel_9.add(tableDR, BorderLayout.CENTER);
 
 		JPanel panel_11 = new JPanel();
-		tabbedPane.addTab("Data Aggregation", null, panel_11, null);
+		tabbedPane.addTab("Data_Aggregation", null, panel_11, null);
 		panel_11.setLayout(new BorderLayout(0, 0));
 
 		tableDA = new JTable();
@@ -289,21 +262,14 @@ public class CAPMInstallerGUI {
 		panel_11.add(tableDA);
 
 		JPanel panel_12 = new JPanel();
-		tabbedPane.addTab("Data Collectors", null, panel_12, null);
+		tabbedPane.addTab("Data_Collectors", null, panel_12, null);
 		panel_12.setLayout(new BorderLayout(0, 0));
-		
+
 		tableDC = new JTable();
 		tableDC.setModel(new DefaultTableModel(
-			new Object[][] {
-				{"*.bin path", "/root/installDC.bin"},
-				{"extracted path", "/opt/IMDataCollector"},
-				{"root username", "root"},
-				{"data aggregator ip", "127.0.0.1"},
-			},
-			new String[] {
-				"New column", "New column"
-			}
-		));
+				new Object[][] { { "*.bin path", "/root/installDC.bin" }, { "extracted path", "/opt/IMDataCollector" },
+						{ "root username", "root" }, { "data aggregator ip", "127.0.0.1" }, },
+				new String[] { "New column", "New column" }));
 		tableDC.getColumnModel().getColumn(0).setPreferredWidth(126);
 		tableDC.getColumnModel().getColumn(1).setPreferredWidth(237);
 		tableDC.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -312,25 +278,123 @@ public class CAPMInstallerGUI {
 		panel_12.add(tableDC, BorderLayout.CENTER);
 
 		JPanel panel_13 = new JPanel();
-		tabbedPane.addTab("P.Center", null, panel_13, null);
+		tabbedPane.addTab("Performance_Center", null, panel_13, null);
 		panel_13.setLayout(new BorderLayout(0, 0));
-		
-		tablePM = new JTable();
-		tablePM.setModel(new DefaultTableModel(
-			new Object[][] {
-				{"*.bin path", "/root/CAPerfCenterSetup.bin"},
-				{"extracted path", "/opt/CA"},
-			},
-			new String[] {
-				"New column", "New column"
+
+		tablePC = new JTable();
+		tablePC.setModel(new DefaultTableModel(
+				new Object[][] { { "*.bin path", "/root/CAPerfCenterSetup.bin" }, { "extracted path", "/opt/CA" }, },
+				new String[] { "New column", "New column" }));
+		tablePC.getColumnModel().getColumn(0).setPreferredWidth(126);
+		tablePC.getColumnModel().getColumn(1).setPreferredWidth(237);
+		tablePC.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		tablePC.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+		tablePC.setBackground(SystemColor.menu);
+		panel_13.add(tablePC, BorderLayout.CENTER);
+
+		JMenuBar menuBar = new JMenuBar();
+		frmInstaller.setJMenuBar(menuBar);
+
+		JMenu mnFile = new JMenu("File");
+		menuBar.add(mnFile);
+
+		JMenuItem mntmLoadConfig = new JMenuItem("Load Config");
+		mntmLoadConfig.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JFileChooser c = new JFileChooser();
+				c.setFileFilter(INIFilterJC);
+
+				int rVal = c.showOpenDialog(null);
+				if (rVal != JFileChooser.APPROVE_OPTION)
+					return;
+				File f = new File(c.getSelectedFile().getAbsolutePath());
+				try {
+					Wini ini = new Wini(f);
+					textFieldHost.setText(ini.get("SSH", "host"));
+					textFieldID.setText(ini.get("SSH", "username"));
+					textFieldPw.setText(ini.get("SSH", "password"));
+
+					resource_groovy.clear();
+					resource_function.clear();
+					resource_table.clear();
+					comboBoxRS.removeAllItems();
+					tabbedPane.removeAll();
+
+					String resources[] = ini.get("Initiation", "Resources").split(",");
+					for (String resourceName : resources) {
+						System.out.println(resourceName);
+						resource_groovy.put(resourceName, ini.get("Groovy", resourceName));
+						resource_function.put(resourceName, ini.get("Functions", resourceName));
+						JTable table = newTableTab(resourceName,
+								new LinkedHashMap<String, String>(ini.get(resourceName + "_Variables")));
+						resource_table.put(resourceName, table);
+						comboBoxRS.addItem(resourceName);
+					}
+					comboBoxRS.setSelectedIndex(0);
+
+				} catch (IOException e) {
+					log(Color.RED, e.getMessage() + "\n\r");
+					e.printStackTrace();
+				}
+
 			}
-		));
-		tablePM.getColumnModel().getColumn(0).setPreferredWidth(126);
-		tablePM.getColumnModel().getColumn(1).setPreferredWidth(237);
-		tablePM.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		tablePM.setFont(new Font("Times New Roman", Font.PLAIN, 13));
-		tablePM.setBackground(SystemColor.menu);
-		panel_13.add(tablePM, BorderLayout.CENTER);
+		});
+		mnFile.add(mntmLoadConfig);
+
+		JMenuItem mntmSaveConfig = new JMenuItem("Save Config");
+		mntmSaveConfig.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JFileChooser c = new JFileChooser();
+				c.setFileFilter(INIFilterJC);
+
+				int rVal = c.showSaveDialog(null);
+				if (rVal != JFileChooser.APPROVE_OPTION)
+					return;
+				File f = new File(c.getSelectedFile().getAbsolutePath());
+				if (f.exists())
+					f.delete();
+				try {
+					f.createNewFile();
+					Wini ini = new Wini(f);
+					ini.put("SSH", "host", textFieldHost.getText());
+					ini.put("SSH", "username", textFieldID.getText());
+					ini.put("SSH", "password", textFieldPw.getText());
+
+					String orderResources = "";
+					for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
+						if (!orderResources.isEmpty())
+							orderResources = orderResources + ",";
+						orderResources = orderResources + entry.getKey();
+					}
+					ini.put("Initiation", "Resources", orderResources);
+
+					for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
+						ini.put("Groovy", entry.getKey(), entry.getValue());
+					}
+
+					for (Map.Entry<String, String> entry : resource_function.entrySet()) {
+						ini.put("Functions", entry.getKey(), entry.getValue());
+					}
+					for (Map.Entry<String, JTable> entry : resource_table.entrySet()) {
+						String resourceName = entry.getKey();
+						TableModel model = resource_table.get(resourceName).getModel();
+						int n = model.getRowCount();
+						for (int i = 0; i < n; i++) {
+							String key = (String) model.getValueAt(i, 0);
+							String value = (String) model.getValueAt(i, 1);
+							ini.put(resourceName + "_Variables", key, value);
+						}
+
+					}
+					ini.store();
+				} catch (IOException e) {
+					log(Color.RED, e.getMessage() + "\n\r");
+					e.printStackTrace();
+				}
+
+			}
+		});
+		mnFile.add(mntmSaveConfig);
 
 		btnGo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -362,29 +426,20 @@ public class CAPMInstallerGUI {
 							}
 
 							// installation
+							btnGo.setText("Installing..");
 							btnGo.setEnabled(false);
-							Installer ins = null;
-							TableModel model = null;
-							if (buttonGroup.isSelected(radioButtonDR.getModel())) {
-								ins = new Installer(shell, "dr.groovy");
-								model = tableDR.getModel();
-							} else if (buttonGroup.isSelected(radioButtonDA.getModel())) {
-								ins = new Installer(shell, "da.groovy");
-								model = tableDA.getModel();
-							} else if (buttonGroup.isSelected(radioButtonDC.getModel())) {
-								ins = new Installer(shell, "dc.groovy");
-								model = tableDC.getModel();
-							} else if (buttonGroup.isSelected(radioButtonPM.getModel())) {
-								ins = new Installer(shell, "pm.groovy");
-								model = tablePM.getModel();
-							}
+
+							String resourceName = (String) comboBoxRS.getSelectedItem();
+							String funcName = (String) comboBoxFunc.getSelectedItem();
+							String groovyName = textFieldFile.getText();
+							Installer ins = new Installer(shell);
+							TableModel model = resource_table.get(resourceName).getModel();
+
 							ins.setMonitor(guiMonitor);
 							SharedResources.putResource("installer", ins);
 							SharedResources.setStep(SharedResources.Step.NEW);
 
-							boolean isUninstall = false;
-							isUninstall = buttonGroup_1.isSelected(radioButtonUninstall.getModel());
-							log(Color.GREEN, (isUninstall ? "Uninstalling.." : "Installing..") + "\n\r");
+							log(Color.GREEN, "running " + funcName + "..\n\r");
 
 							boolean isLooping = true;
 							while (isLooping) {
@@ -395,10 +450,7 @@ public class CAPMInstallerGUI {
 									SharedResources.putResource(key, value);
 								}
 								try {
-									if (isUninstall)
-										ins.uninstall();
-									else
-										ins.install();
+									ins.run(funcName, groovyName);
 									isLooping = false;
 								} catch (IOException e) {
 									log(Color.RED, e.getMessage() + "\n\r");
@@ -460,6 +512,39 @@ public class CAPMInstallerGUI {
 				}
 			}
 		});
+
+		resource_groovy.put("Vertica_DB", "dr.groovy");
+		resource_groovy.put("Data_Aggregation", "da.groovy");
+		resource_groovy.put("Data_Collectors", "dc.groovy");
+		resource_groovy.put("Performance_Center", "pc.groovy");
+		resource_function.put("Vertica_DB", "install,uninstall");
+		resource_function.put("Data_Aggregation", "install,uninstall");
+		resource_function.put("Data_Collectors", "install,uninstall");
+		resource_function.put("Performance_Center", "install,uninstall");
+		resource_table.put("Vertica_DB", tableDR);
+		resource_table.put("Data_Aggregation", tableDA);
+		resource_table.put("Data_Collectors", tableDC);
+		resource_table.put("Performance_Center", tablePC);
+
+	}
+
+	public JTable newTableTab(String tabName, LinkedHashMap<String, String> map) {
+		JPanel panel = new JPanel();
+		tabbedPane.addTab(tabName, null, panel, null);
+		panel.setLayout(new BorderLayout(0, 0));
+		JTable table = new JTable();
+		panel.add(table, BorderLayout.CENTER);
+		DefaultTableModel model = new DefaultTableModel(new Object[][] {}, new String[] { "Key", "Value" });
+		table.setModel(model);
+		table.getColumnModel().getColumn(0).setPreferredWidth(126);
+		table.getColumnModel().getColumn(1).setPreferredWidth(237);
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
+		table.setBackground(SystemColor.menu);
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			model.addRow(new String[] { entry.getKey(), entry.getValue() });
+		}
+		return table;
 	}
 
 	public void log(Color c, String s) {
@@ -489,5 +574,32 @@ public class CAPMInstallerGUI {
 	private JTable tableDA;
 	private JTable tableDR;
 	private JTable tableDC;
-	private JTable tablePM;
+	private JTable tablePC;
+	private JFrame frmInstaller;
+	private JTextField textFieldHost;
+	private JTextField textFieldID;
+	private JTextField textFieldPw;
+	private JTextField textFieldFile;
+	private JTextPane textPane;
+	private JTabbedPane tabbedPane;
+	private JComboBox<String> comboBoxRS;
+	private JComboBox<String> comboBoxFunc;
+
+	private FileFilter INIFilterJC = new FileFilter() {
+
+		@Override
+		public String getDescription() {
+			return "INI File (*.ini)";
+		}
+
+		@Override
+		public boolean accept(File f) {
+			if (f.isDirectory()) {
+				return false;
+			} else {
+				String filename = f.getName().toLowerCase();
+				return filename.endsWith(".ini");
+			}
+		}
+	};
 }

@@ -2,13 +2,10 @@ package capm.installer.TOOL;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 
 import org.codehaus.groovy.control.CompilationFailedException;
-
-import capm.installer.CAPMInstallerGUI;
 import capm.installer.MODEL.ShellCommandException;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;

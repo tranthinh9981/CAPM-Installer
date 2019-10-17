@@ -1,9 +1,11 @@
 import capm.installer.TOOL.Utilities;
+import groovy.transform.InheritConstructors
 import capm.installer.Installer
 import capm.installer.INTERFACE.Monitoring
 import capm.installer.SHARE.SharedResources
 import capm.installer.MODEL.ShellSSH
 
+@InheritConstructors
 class Groovy extends Shell{
 	
 	//your code below!
@@ -30,7 +32,7 @@ class Groovy extends Shell{
 				"$binPath\n";
 
 		TreeMap<String, String> configCommand = new TreeMap<String, String>();
-		configCommand.put('5- 繁體中文','1');
+		configCommand.put('Choose Locale','1');
 		configCommand.put("by typing 'quit'",'');
 		configCommand.put("PRESS <ENTER> TO CONTINUE","");
 		configCommand.put("DO YOU ACCEPT THE TERMS OF THIS LICENSE AGREEMENT?","y");
@@ -42,12 +44,7 @@ class Groovy extends Shell{
 		configCommand.put('Data Aggregator Host',daIP);
 		configCommand.put('Installation Complete','\necho $?');
 
-		String[] lines = script.split("\\n");
-		for (String line : lines) {
-			if(excute(line, configCommand) > 0)
-				return false;
-		}
-		return true;
+		return excuteScript(script, configCommand);
 	}
 	def boolean dc_uninstallation() {
 		String script = "$extractedPath/Uninstall/Uninstall\n";
@@ -57,11 +54,7 @@ class Groovy extends Shell{
 		configCommand.put('Some items could not be removed', 'echo $?');
 		configCommand.put('Uninstall Complete', 'echo $?');
 		configCommand.put('could not complete due to an error', 'echo $?');
-		String[] lines = script.split("\\r?\\n");
-		for (String line : lines) {
-			if(excute(line, configCommand) > 0)
-				return false;
-		}
-		return true;
+		
+		return excuteScript(script, configCommand);
 	}
 }
