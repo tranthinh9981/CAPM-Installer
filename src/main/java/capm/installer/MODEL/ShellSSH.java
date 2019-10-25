@@ -40,7 +40,7 @@ public class ShellSSH{
 		((ChannelShell) channel).setEnv("LANG", "en_US.UTF-8");
 		((ChannelShell) channel).setPty(true);
 		((ChannelShell) channel).setPtyType("dumb");
-
+		
 		receiver = new BufferedReader(new InputStreamReader(channel.getInputStream()));
 		sender = new PrintStream(channel.getOutputStream());
 		channel.connect(timeout);
