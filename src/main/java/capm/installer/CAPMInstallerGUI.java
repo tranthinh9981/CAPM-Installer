@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedByInterruptException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.TreeMap;
@@ -171,8 +172,9 @@ public class CAPMInstallerGUI {
 		JLabel lblResources = new JLabel("Resource:");
 		panel_3.add(lblResources);
 		comboBoxRS = new JComboBox<String>();
-		comboBoxRS.setModel(new DefaultComboBoxModel<String>(
-				new String[] { "Vertica_DB", "Data_Aggregation", "Data_Collectors", "Performance_Center" }));
+		comboBoxRS.setModel(new DefaultComboBoxModel(
+				new String[] { "All", "Vertica_DB", "Data_Aggregation", "Data_Collectors", "Performance_Center" }));
+		comboBoxRS.setSelectedIndex(0);
 		panel_3.add(comboBoxRS);
 		JLabel lblFunction = new JLabel("Function:");
 		panel_3.add(lblFunction);
@@ -244,6 +246,22 @@ public class CAPMInstallerGUI {
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
 		scrollPane.setColumnHeaderView(tabbedPane);
+		
+		JPanel panel_2 = new JPanel();
+		tabbedPane.addTab("All", null, panel_2, null);
+		panel_2.setLayout(new BorderLayout(0, 0));
+		
+		tableAll = new JTable();
+		tableAll.setBackground(UIManager.getColor("Button.background"));
+		tableAll.setModel(new DefaultTableModel(
+			new Object[][] {
+				{"*", null},
+			},
+			new String[] {
+				"New column", "New column"
+			}
+		));
+		panel_2.add(tableAll);
 
 		JPanel panel_9 = new JPanel();
 		tabbedPane.addTab("Vertica_DB", null, panel_9, null);
@@ -343,7 +361,7 @@ public class CAPMInstallerGUI {
 					for (String resourceName : resources) {
 						resource_groovy.put(resourceName, ini.get("Groovy", resourceName));
 						resource_function.put(resourceName, ini.get("Functions", resourceName));
-
+						
 						JTable table = newTableTab(resourceName, ini.get(resourceName + "_Variables"));
 
 						resource_table.put(resourceName, table);
@@ -440,108 +458,121 @@ public class CAPMInstallerGUI {
 					btnStop.setEnabled(true);
 					thread = new Thread(new Runnable() {
 						public void run() {
-							ShellSSH shell = null;
-							try {
-								Thread.sleep(77);
 
-								btnGo.setText("Connecting..");
-								btnGo.setEnabled(false);
-								// shell connecting
-								log(Color.GREEN, "Connecting..\n\r");
-								final String host = textFieldHost.getText();
-								final String id = textFieldID.getText();
-								final String pw = textFieldPw.getText();
-								shell = new ShellSSH(host, id, pw);
+							int iTotal = comboBoxRS.getItemCount();
+							int iStart = 1;
+							Object Func = comboBoxFunc.getSelectedItem();
+							if (!comboBoxRS.getSelectedItem().equals("All")) {
+								iTotal = comboBoxRS.getSelectedIndex();
+								iStart = comboBoxRS.getSelectedIndex();
+							}
+							
+							for (int iIndex = iStart; iIndex < iTotal; iIndex++) {
+								comboBoxRS.setSelectedIndex(iIndex);
+								comboBoxFunc.setSelectedItem(Func);
+								ShellSSH shell = null;
 								try {
-									shell.connect(15000);
-									log(Color.GREEN, "Connected!\n\r");
-								} catch (JSchException | IOException e) {
-									log(Color.RED, e.getMessage() + "\n\r");
-									btnGo.setText("Go!");
-									return;
-								}
+									Thread.sleep(77);
 
-								// installation
-								btnGo.setText("Installing..");
-
-								String resourceName = (String) comboBoxRS.getSelectedItem();
-								String funcName = (String) comboBoxFunc.getSelectedItem();
-								String groovyName = textFieldFile.getText();
-								Installer ins = new Installer(shell);
-								TableModel model = resource_table.get(resourceName).getModel();
-
-								ins.setMonitor(guiMonitor);
-								SharedResources.putResource("installer", ins);
-								SharedResources.setStep(SharedResources.Step.NEW);
-
-								log(Color.GREEN, "running " + funcName + "..\n\r");
-
-								boolean isLooping = true;
-								while (isLooping) {
-									int n = model.getRowCount();
-									for (int i = 0; i < n; i++) {
-										String key = (String) model.getValueAt(i, 0);
-										String value = (String) model.getValueAt(i, 1);
-										SharedResources.putResource(key, value);
-									}
+									btnGo.setText("Connecting..");
+									btnGo.setEnabled(false);
+									// shell connecting
+									log(Color.GREEN, "Connecting..\n\r");
+									final String host = textFieldHost.getText();
+									final String id = textFieldID.getText();
+									final String pw = textFieldPw.getText();
+									shell = new ShellSSH(host, id, pw);
 									try {
-										ins.run(funcName, groovyName);
-										isLooping = false;
-									} catch (IOException e) {
+										shell.connect(15000);
+										log(Color.GREEN, "Connected!\n\r");
+									} catch (JSchException | IOException e) {
 										log(Color.RED, e.getMessage() + "\n\r");
-									} catch (ShellCommandException e) {
-										log(Color.RED, "an installing error occurred\n\r");
-										JOptionPane p = new JOptionPane(
-												"'Yes' to retry the current command, 'No' to ignore the current command or 'Cancel' to abort the process",
-												JOptionPane.ERROR_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION);
-										JDialog k = p.createDialog("An installing error occurred");
-										k.setModal(false); // Makes the dialog not modal
-										k.setVisible(true);
-										Object selectedValue;
-										while ((selectedValue = p.getValue()) == JOptionPane.UNINITIALIZED_VALUE) {
-											try {
-												Thread.sleep(77);
-											} catch (InterruptedException e1) {
-												e1.printStackTrace();
-												return;
-											}
-										}
+										btnGo.setText("Go!");
+										return;
+									}
 
-										int c = JOptionPane.CANCEL_OPTION;
-										if (selectedValue != null) {
-											c = (Integer) selectedValue;
+									// installation
+									btnGo.setText("Installing..");
+									
+									String resourceName = (String) comboBoxRS.getSelectedItem();
+									String funcName = (String) comboBoxFunc.getSelectedItem();
+									String groovyName = textFieldFile.getText();
+									Installer ins = new Installer(shell);
+									TableModel model = resource_table.get(resourceName).getModel();
+
+									ins.setMonitor(guiMonitor);
+									SharedResources.putResource("installer", ins);
+									SharedResources.setStep(SharedResources.Step.NEW);
+
+									log(Color.GREEN, "running " + funcName + "..\n\r");
+
+									boolean isLooping = true;
+									while (isLooping) {
+										int n = model.getRowCount();
+										for (int i = 0; i < n; i++) {
+											String key = (String) model.getValueAt(i, 0);
+											String value = (String) model.getValueAt(i, 1);
+											SharedResources.putResource(key, value);
 										}
-										switch (c) {
-										case JOptionPane.YES_OPTION:// retry
-											SharedResources.setStep(SharedResources.Step.RETRY);
-											break;
-										case JOptionPane.NO_OPTION:// ignore
-											SharedResources.setStep(SharedResources.Step.IGNORE);
-											break;
-										case JOptionPane.CANCEL_OPTION:// abort
-											SharedResources.setStep(SharedResources.Step.NEW);
+										try {
+											ins.run(funcName, groovyName);
 											isLooping = false;
-											break;
-										}
-									} catch (CompilationFailedException | URISyntaxException e) {
-										log(Color.RED, e.getMessage() + "\n\r");
-									}
-								}
+										} catch (IOException e) {
+											log(Color.RED, e.getMessage() + "\n\r");
+										} catch (ShellCommandException e) {
+											log(Color.RED, "an installing error occurred\n\r");
+											JOptionPane p = new JOptionPane(
+													"'Yes' to retry the current command, 'No' to ignore the current command or 'Cancel' to abort the process",
+													JOptionPane.ERROR_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION);
+											JDialog k = p.createDialog("An installing error occurred");
+											k.setModal(false); // Makes the dialog not modal
+											k.setVisible(true);
+											Object selectedValue;
+											while ((selectedValue = p.getValue()) == JOptionPane.UNINITIALIZED_VALUE) {
+												try {
+													Thread.sleep(77);
+												} catch (InterruptedException e1) {
+													e1.printStackTrace();
+													return;
+												}
+											}
 
-							} catch (InterruptedException e) {
-								log(Color.RED, e.getMessage() + "\n\r");
-							} finally {
-								btnGo.setEnabled(true);
-								btnGo.setText("Go!");
-								isConnecting = false;
-								if (shell != null) {
-									try {
-										shell.close();
-									} catch (IOException e) {
-										log(Color.RED, e.getMessage() + "\n\r");
+											int c = JOptionPane.CANCEL_OPTION;
+											if (selectedValue != null) {
+												c = (Integer) selectedValue;
+											}
+											switch (c) {
+											case JOptionPane.YES_OPTION:// retry
+												SharedResources.setStep(SharedResources.Step.RETRY);
+												break;
+											case JOptionPane.NO_OPTION:// ignore
+												SharedResources.setStep(SharedResources.Step.IGNORE);
+												break;
+											case JOptionPane.CANCEL_OPTION:// abort
+												SharedResources.setStep(SharedResources.Step.NEW);
+												isLooping = false;
+												break;
+											}
+										} catch (CompilationFailedException | URISyntaxException e) {
+											log(Color.RED, e.getMessage() + "\n\r");
+										}
 									}
+
+								} catch (InterruptedException e) {
+									log(Color.RED, e.getMessage() + "\n\r");
+								} finally {
+									btnGo.setEnabled(true);
+									btnGo.setText("Go!");
+									isConnecting = false;
+									if (shell != null) {
+										try {
+											shell.close();
+										} catch (IOException e) {
+											log(Color.RED, e.getMessage() + "\n\r");
+										}
+									}
+									Thread.interrupted();
 								}
-								Thread.interrupted();
 							}
 						}
 					});
@@ -550,15 +581,18 @@ public class CAPMInstallerGUI {
 				}
 			}
 		});
-
+		
+		resource_groovy.put("All", "");
 		resource_groovy.put("Vertica_DB", "dr.groovy");
 		resource_groovy.put("Data_Aggregation", "da.groovy");
 		resource_groovy.put("Data_Collectors", "dc.groovy");
 		resource_groovy.put("Performance_Center", "pc.groovy");
+		resource_function.put("All", "install,uninstall");
 		resource_function.put("Vertica_DB", "install,uninstall");
 		resource_function.put("Data_Aggregation", "install,uninstall");
 		resource_function.put("Data_Collectors", "install,uninstall");
 		resource_function.put("Performance_Center", "install,uninstall");
+		resource_table.put("All", tableAll);
 		resource_table.put("Vertica_DB", tableDR);
 		resource_table.put("Data_Aggregation", tableDA);
 		resource_table.put("Data_Collectors", tableDC);
@@ -642,4 +676,5 @@ public class CAPMInstallerGUI {
 			}
 		}
 	};
+	private JTable tableAll;
 }

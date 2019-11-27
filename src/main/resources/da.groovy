@@ -7,7 +7,7 @@ import capm.installer.MODEL.ShellSSH
 import Shell
 
 @InheritConstructors
-class Groovy extends Shell{
+class da extends Shell{
 	
 	//your code below!
 	String binPath = SharedResources.getResource('*.bin path');
