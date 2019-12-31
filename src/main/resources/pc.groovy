@@ -7,7 +7,7 @@ import capm.installer.MODEL.ShellSSH
 import Shell
 
 @InheritConstructors
-class Groovy extends Shell{
+class pc extends Shell{
 	//your code below!
 	String binPath = SharedResources.getResource('*.bin path');
 	String extractedPath = SharedResources.getResource('extracted path');
@@ -39,7 +39,11 @@ class Groovy extends Shell{
 		configCommand.put("ENTER THE NUMBER OF THE DESIRED CHOICE, OR PRESS <ENTER> TO ACCEPT THE","1");
 		configCommand.put("ENTER AN ABSOLUTE PATH", extractedPath);
 		configCommand.put("INSTALL FOLDER IS","y");
+		configCommand.put("requires a database password to continue","bk9zq@RG");
+		configCommand.put("Confirm the database password","bk9zq@RG");
+		configCommand.put("Specify the location where the installer should create the MySQL","")
 		configCommand.put('Console Service',"\r");
+		configCommand.put('Set the maximum memory','\r');
 		configCommand.put('Device Manager Service',"\n");
 		configCommand.put('Event Manager Service',"\n");
 		configCommand.put('MySql Data Directory',"\n");

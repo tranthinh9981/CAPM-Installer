@@ -463,10 +463,9 @@ public class CAPMInstallerGUI {
 							int iStart = 1;
 							Object Func = comboBoxFunc.getSelectedItem();
 							if (!comboBoxRS.getSelectedItem().equals("All")) {
-								iTotal = comboBoxRS.getSelectedIndex();
+								iTotal = comboBoxRS.getSelectedIndex()+1;
 								iStart = comboBoxRS.getSelectedIndex();
 							}
-							
 							for (int iIndex = iStart; iIndex < iTotal; iIndex++) {
 								comboBoxRS.setSelectedIndex(iIndex);
 								comboBoxFunc.setSelectedItem(Func);
