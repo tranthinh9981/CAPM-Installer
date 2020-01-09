@@ -246,21 +246,15 @@ public class CAPMInstallerGUI {
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 
 		scrollPane.setColumnHeaderView(tabbedPane);
-		
+
 		JPanel panel_2 = new JPanel();
 		tabbedPane.addTab("All", null, panel_2, null);
 		panel_2.setLayout(new BorderLayout(0, 0));
-		
+
 		tableAll = new JTable();
 		tableAll.setBackground(UIManager.getColor("Button.background"));
-		tableAll.setModel(new DefaultTableModel(
-			new Object[][] {
-				{"*", null},
-			},
-			new String[] {
-				"New column", "New column"
-			}
-		));
+		tableAll.setModel(
+				new DefaultTableModel(new Object[][] { { "*", null }, }, new String[] { "New column", "New column" }));
 		panel_2.add(tableAll);
 
 		JPanel panel_9 = new JPanel();
@@ -345,36 +339,7 @@ public class CAPMInstallerGUI {
 				if (rVal != JFileChooser.APPROVE_OPTION)
 					return;
 				File f = new File(c.getSelectedFile().getAbsolutePath());
-				try {
-					Wini ini = new Wini(f);
-					textFieldHost.setText(ini.get("SSH", "host"));
-					textFieldID.setText(ini.get("SSH", "username"));
-					textFieldPw.setText(ini.get("SSH", "password"));
-
-					resource_groovy.clear();
-					resource_function.clear();
-					resource_table.clear();
-					comboBoxRS.removeAllItems();
-					tabbedPane.removeAll();
-
-					String resources[] = ini.get("Initiation", "Resources").split(",");
-					for (String resourceName : resources) {
-						resource_groovy.put(resourceName, ini.get("Groovy", resourceName));
-						resource_function.put(resourceName, ini.get("Functions", resourceName));
-						
-						JTable table = newTableTab(resourceName, ini.get(resourceName + "_Variables"));
-
-						resource_table.put(resourceName, table);
-						comboBoxRS.addItem(resourceName);
-
-					}
-					comboBoxRS.setSelectedIndex(0);
-
-				} catch (IOException e) {
-					log(Color.RED, e.getMessage() + "\n\r");
-					e.printStackTrace();
-				}
-
+				loadFile(f);
 			}
 		});
 
@@ -390,45 +355,7 @@ public class CAPMInstallerGUI {
 				File f = new File(c.getSelectedFile().getAbsolutePath());
 				if (f.exists())
 					f.delete();
-				try {
-					f.createNewFile();
-					Wini ini = new Wini(f);
-					ini.put("SSH", "host", textFieldHost.getText());
-					ini.put("SSH", "username", textFieldID.getText());
-					ini.put("SSH", "password", textFieldPw.getText());
-
-					System.out.println(resource_groovy);
-					String orderResources = "";
-					for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
-						if (!orderResources.isEmpty())
-							orderResources = orderResources + ",";
-						orderResources = orderResources + entry.getKey();
-					}
-					ini.put("Initiation", "Resources", orderResources);
-
-					for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
-						ini.put("Groovy", entry.getKey(), entry.getValue());
-					}
-
-					for (Map.Entry<String, String> entry : resource_function.entrySet()) {
-						ini.put("Functions", entry.getKey(), entry.getValue());
-					}
-					for (Map.Entry<String, JTable> entry : resource_table.entrySet()) {
-						String resourceName = entry.getKey();
-						TableModel model = resource_table.get(resourceName).getModel();
-						int n = model.getRowCount();
-						for (int i = 0; i < n; i++) {
-							String key = (String) model.getValueAt(i, 0);
-							String value = (String) model.getValueAt(i, 1);
-							ini.put(resourceName + "_Variables", key, value);
-						}
-
-					}
-					ini.store();
-				} catch (IOException e) {
-					log(Color.RED, e.getMessage() + "\n\r");
-					e.printStackTrace();
-				}
+				saveFile(f);
 
 			}
 		});
@@ -463,7 +390,7 @@ public class CAPMInstallerGUI {
 							int iStart = 1;
 							Object Func = comboBoxFunc.getSelectedItem();
 							if (!comboBoxRS.getSelectedItem().equals("All")) {
-								iTotal = comboBoxRS.getSelectedIndex()+1;
+								iTotal = comboBoxRS.getSelectedIndex() + 1;
 								iStart = comboBoxRS.getSelectedIndex();
 							}
 							for (int iIndex = iStart; iIndex < iTotal; iIndex++) {
@@ -492,7 +419,7 @@ public class CAPMInstallerGUI {
 
 									// installation
 									btnGo.setText("Installing..");
-									
+
 									String resourceName = (String) comboBoxRS.getSelectedItem();
 									String funcName = (String) comboBoxFunc.getSelectedItem();
 									String groovyName = textFieldFile.getText();
@@ -562,6 +489,7 @@ public class CAPMInstallerGUI {
 								} finally {
 									btnGo.setEnabled(true);
 									btnGo.setText("Go!");
+									btnStop.setEnabled(false);
 									isConnecting = false;
 									if (shell != null) {
 										try {
@@ -570,9 +498,16 @@ public class CAPMInstallerGUI {
 											log(Color.RED, e.getMessage() + "\n\r");
 										}
 									}
+									
 									Thread.interrupted();
 								}
 							}
+							JOptionPane p = new JOptionPane(
+									"Completed!",
+									JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_OPTION);
+							JDialog k = p.createDialog("Status");
+							k.setModal(true); // Makes the dialog not modal
+							k.setVisible(true);
 						}
 					});
 					thread.setName("Shell Thread");
@@ -580,23 +515,82 @@ public class CAPMInstallerGUI {
 				}
 			}
 		});
-		
-		resource_groovy.put("All", "");
-		resource_groovy.put("Vertica_DB", "dr.groovy");
-		resource_groovy.put("Data_Aggregation", "da.groovy");
-		resource_groovy.put("Data_Collectors", "dc.groovy");
-		resource_groovy.put("Performance_Center", "pc.groovy");
-		resource_function.put("All", "install,uninstall");
-		resource_function.put("Vertica_DB", "install,uninstall");
-		resource_function.put("Data_Aggregation", "install,uninstall");
-		resource_function.put("Data_Collectors", "install,uninstall");
-		resource_function.put("Performance_Center", "install,uninstall");
-		resource_table.put("All", tableAll);
-		resource_table.put("Vertica_DB", tableDR);
-		resource_table.put("Data_Aggregation", tableDA);
-		resource_table.put("Data_Collectors", tableDC);
-		resource_table.put("Performance_Center", tablePC);
 
+		loadFile(Utilities.loadFileResources("default.ini"));
+
+	}
+
+	public void loadFile(File f) {
+		try {
+			Wini ini = new Wini(f);
+			textFieldHost.setText(ini.get("SSH", "host"));
+			textFieldID.setText(ini.get("SSH", "username"));
+			textFieldPw.setText(ini.get("SSH", "password"));
+
+			resource_groovy.clear();
+			resource_function.clear();
+			resource_table.clear();
+			comboBoxRS.removeAllItems();
+			tabbedPane.removeAll();
+
+			String resources[] = ini.get("Initiation", "Resources").split(",");
+			for (String resourceName : resources) {
+				resource_groovy.put(resourceName, ini.get("Groovy", resourceName));
+				resource_function.put(resourceName, ini.get("Functions", resourceName));
+
+				JTable table = newTableTab(resourceName, ini.get(resourceName + "_Variables"));
+
+				resource_table.put(resourceName, table);
+				comboBoxRS.addItem(resourceName);
+
+			}
+			comboBoxRS.setSelectedIndex(0);
+
+		} catch (IOException e) {
+			log(Color.RED, e.getMessage() + "\n\r");
+			e.printStackTrace();
+		}
+	}
+
+	public void saveFile(File f) {
+		try {
+			f.createNewFile();
+			Wini ini = new Wini(f);
+			ini.put("SSH", "host", textFieldHost.getText());
+			ini.put("SSH", "username", textFieldID.getText());
+			ini.put("SSH", "password", textFieldPw.getText());
+
+			String orderResources = "";
+			for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
+				if (!orderResources.isEmpty())
+					orderResources = orderResources + ",";
+				orderResources = orderResources + entry.getKey();
+			}
+			ini.put("Initiation", "Resources", orderResources);
+
+			for (Map.Entry<String, String> entry : resource_groovy.entrySet()) {
+				ini.put("Groovy", entry.getKey(), entry.getValue());
+			}
+
+			for (Map.Entry<String, String> entry : resource_function.entrySet()) {
+				ini.put("Functions", entry.getKey(), entry.getValue());
+			}
+			for (Map.Entry<String, JTable> entry : resource_table.entrySet()) {
+				String resourceName = entry.getKey();
+				TableModel model = resource_table.get(resourceName).getModel();
+				int n = model.getRowCount();
+				for (int i = 0; i < n; i++) {
+					String key = (String) model.getValueAt(i, 0);
+					String value = (String) model.getValueAt(i, 1);
+					ini.put(resourceName + "_Variables", key, value);
+				}
+
+			}
+			ini.store();
+		} catch (IOException e) {
+			log(Color.RED, e.getMessage() + "\n\r");
+			e.printStackTrace();
+		}
 	}
 
 	public JTable newTableTab(String tabName, Section section) {

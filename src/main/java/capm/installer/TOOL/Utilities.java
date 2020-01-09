@@ -22,6 +22,9 @@ public class Utilities {
 			return null;
 		}
 	}
+	public static File loadFileResources(String fileName) {
+		return new File("src/main/resources/"+fileName);
+	}
 	public static void excuteGroovyFromResources(String funcName, String fileName) throws IOException, ShellCommandException, InstantiationException, IllegalAccessException, CompilationFailedException, URISyntaxException{
 		classLoader.clearCache();
 		File f = new File("src/main/resources/"+fileName);
