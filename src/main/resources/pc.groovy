@@ -13,6 +13,8 @@ class pc extends Shell{
 	String extractedPath = SharedResources.getResource('extracted path');
 	String rootUser = SharedResources.getResource('root username');
 	String daIP = SharedResources.getResource('data aggregator ip');
+	String mysqlPwd = SharedResources.getResource('mysql pwd');
+	
 	def String install() {
 		init();
 		if(!pc_installation())
@@ -39,8 +41,8 @@ class pc extends Shell{
 		configCommand.put("ENTER THE NUMBER OF THE DESIRED CHOICE, OR PRESS <ENTER> TO ACCEPT THE","1");
 		configCommand.put("ENTER AN ABSOLUTE PATH", extractedPath);
 		configCommand.put("INSTALL FOLDER IS","y");
-		configCommand.put("requires a database password to continue","bk9zq@RG");
-		configCommand.put("Confirm the database password","bk9zq@RG");
+		configCommand.put("requires a database password to continue",mysqlPwd);
+		configCommand.put("Confirm the database password",mysqlPwd);
 		configCommand.put("Specify the location where the installer should create the MySQL","")
 		configCommand.put('Console Service',"\r");
 		configCommand.put('Set the maximum memory','\r');
@@ -50,7 +52,7 @@ class pc extends Shell{
 		configCommand.put('MySql Temp Directory',"\n");
 		configCommand.put('Disk Space Information','');
 		configCommand.put('Installation Complete','\necho $?');
-
+		
 		return excuteScript(script, configCommand);
 	}
 	def boolean pc_uninstallation() {
