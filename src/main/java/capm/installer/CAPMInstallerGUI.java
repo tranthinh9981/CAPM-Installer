@@ -108,7 +108,7 @@ public class CAPMInstallerGUI {
 	private void initialize() {
 
 		frmInstaller = new JFrame();
-		frmInstaller.setTitle("Remote Installer");
+		frmInstaller.setTitle("Remote Installer - copyright tranthinh9981@gmail.com");
 		frmInstaller.setBounds(100, 100, 450, 523);
 		frmInstaller.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmInstaller.getContentPane().setLayout(new BorderLayout(0, 0));

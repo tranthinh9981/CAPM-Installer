@@ -32,7 +32,7 @@ class pc extends Shell{
 		String script = "chmod a+x $binPath\n"+
 				"rm -rf $extractedPath\n"+
 				"$binPath\n";
-
+		
 		TreeMap<String, String> configCommand = new TreeMap<String, String>();
 		configCommand.put('Choose Locale','1');
 		configCommand.put("prompt and make changes",'');
@@ -51,13 +51,19 @@ class pc extends Shell{
 		configCommand.put('MySql Data Directory',"\n");
 		configCommand.put('MySql Temp Directory',"\n");
 		configCommand.put('Disk Space Information','');
-		configCommand.put('Installation Complete','\necho $?');
+		configCommand.put('Installation Successful','\necho $?');
+		configCommand.put('Upgrade Complete','\necho $?');
+		configCommand.put('Please see the installation log for details','\necho $?');
 		
 		return excuteScript(script, configCommand);
 	}
 	def boolean pc_uninstallation() {
-		String script = "$extractedPath/PerformanceCenter/uninstall/Uninstall_PerformanceCenter\n";
-
+		String script = "$extractedPath/PerformanceCenter/uninstall/Uninstall_PerformanceCenter\n"+
+		'rm -rf /var/.com.zerog.registry.xml\n'+
+		'rm -rf /mysql\n'+
+		'rm -rf /etc/systemd/system/mysql.service\n' +
+		'rm -rf /opt/CA';
+		
 		TreeMap<String, String> configCommand = new TreeMap<String, String>();
 		configCommand.put('This will remove features installed by InstallAnywhere','');
 		configCommand.put('Some items could not be removed', 'echo $?');

@@ -88,6 +88,7 @@ class Groovy extends Shell{
 		configCommand.put('Some items could not be removed', 'echo $?');
 		configCommand.put('Uninstall Complete', 'echo $?');
 		configCommand.put('could not complete due to an error', 'echo $?');
+		configCommand.put('EntIT Software LLC','ACCEPT');
 
 		return excuteScript(script, configCommand);
 	}
